@@ -1,41 +1,31 @@
-name: Publish
+name: Docker Build and Push
 
 on:
-  release:
-    types:
-      - created
+  push:
+    branches:
+      - master
 
 jobs:
-  publish:
+  build_and_push:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          # Issue ref: https://github.com/actions/setup-python/issues/436
-          # cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: ${{ env.pythonLocation }}
-          key: ${{ runner.os }}-python-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}-publish
-      - name: Install build dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pip install build
-      - name: Build distribution
-        run: python -m build
-      - name: Publish
-        uses: pypa/gh-action-pypi-publish@v1.8.10
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+      
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      
+    - name: Build and Push Docker Image for Tinyfilemanager
+      run: |
+        docker buildx create --use
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        docker buildx build --platform linux/amd64,linux/arm64 -t vouu/tinyfilemanager . --push
