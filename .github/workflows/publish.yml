@@ -24,8 +24,8 @@ jobs:
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       
-    - name: Build and Push Docker Image for Tinyfilemanager
+    - name: Build and Push Docker Image for fastapi
       run: |
         docker buildx create --use
         echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-        docker buildx build --platform linux/amd64,linux/arm64 -t vouu/tinyfilemanager . --push
+        docker buildx build --platform linux/amd64,linux/arm64 -t vouu/fastapi . --push
